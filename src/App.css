@@ -1,30 +1,285 @@
 :root {
-  font-family: system-ui, sans-serif;
-  color: #202124;
-  background: #fafafa;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 12px;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  color-scheme: dark;
+  --background: #27272a;
+  --surface: #2e2e32;
+  --hover: #323236;
+  --selection: #3f3f46;
+  --foreground: #e4e4e7;
+  --muted: #a1a1aa;
+  --line: #3f3f46;
+  --outline: #52525b;
+  --accent: #eac457;
+  --accent-hover: #f3d478;
+  --accent-pressed: #d6ac3e;
+  --accent-ink: #30270e;
+  --processing: #79b8ef;
+  --success: #8bc697;
+  --error: #ec9690;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --row-height: 28px;
+  --header-height: 30px;
+  --fab-size: 40px;
+  --fab-clearance: 72px;
+  background: var(--background);
+  color: var(--foreground);
+}
+* {
+  box-sizing: border-box;
 }
 body {
   margin: 0;
-  min-width: 280px;
+  min-width: 360px;
 }
-main {
-  max-width: 36rem;
-  padding: 3rem 2rem;
-  margin: 0 auto;
+button {
+  font: inherit;
+  cursor: pointer;
 }
-h1 {
-  font-size: 2rem;
-  margin: 0 0 1rem;
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
-p {
-  line-height: 1.6;
+::selection {
+  background: var(--selection);
+  color: var(--foreground);
 }
-small {
-  display: block;
-  margin-top: 2rem;
+.app {
+  height: 100dvh;
+  min-height: 240px;
+  position: relative;
+  overflow: hidden;
+}
+.drop-zone {
+  position: absolute;
+  inset: var(--space-3);
+  border: 1px dashed var(--outline);
+  border-radius: 3px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+.drop-zone > svg {
+  width: 64px;
+  height: 64px;
+}
+.is-dragging::after {
+  content: "";
+  position: absolute;
+  inset: var(--space-1);
+  border: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border-radius: 3px;
+  pointer-events: none;
+  z-index: 3;
+}
+.is-dragging .drop-zone {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.table-scroll {
+  height: 100%;
+  overflow: auto;
+  padding-bottom: var(--fab-clearance);
+  scrollbar-color: var(--outline) var(--background);
+  scroll-padding-top: var(--header-height);
+  scroll-padding-bottom: var(--fab-clearance);
+}
+table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  user-select: none;
+  outline: none;
+}
+.status-column {
+  width: 34px;
+}
+.size-column {
+  width: 84px;
+}
+.savings-column {
+  width: 76px;
+}
+th,
+td {
+  height: var(--row-height);
+  padding: 0 var(--space-2);
+  font-weight: 400;
+}
+th {
+  height: var(--header-height);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  color: var(--muted);
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+}
+th:last-child,
+td:last-child {
+  padding-right: var(--space-3);
+}
+td:first-child {
+  padding-left: var(--space-3);
+}
+.filename {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.savings {
+  color: var(--muted);
+}
+tbody tr:hover {
+  background: var(--hover);
+}
+tbody tr[aria-selected="true"] {
+  background: var(--selection);
+}
+table:focus-visible .focused {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+table:focus-visible:not(:has(.focused)) {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+.file-status {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  color: var(--muted);
+}
+.file-status svg {
+  width: 100%;
+  height: 100%;
+}
+.file-status.unprocessed {
+  color: var(--muted);
+}
+.file-status.processing {
+  color: var(--processing);
+}
+.file-status.compressed {
+  color: var(--success);
+}
+.file-status.error {
+  color: var(--error);
+}
+.floating-actions {
+  position: absolute;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  z-index: 4;
+}
+.add-files {
+  width: var(--fab-size);
+  height: var(--fab-size);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.add-files:hover {
+  background: var(--accent-hover);
+}
+.add-files:active {
+  background: var(--accent-pressed);
+}
+.add-files svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  fill: none;
+}
+.errors {
+  position: absolute;
+  bottom: var(--fab-clearance);
+  left: var(--space-3);
+  right: var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  padding: var(--space-3);
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  z-index: 4;
+}
+.errors > div {
+  flex: 1;
+  min-width: 0;
+  max-height: 110px;
+  overflow: auto;
+}
+.errors ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: var(--error);
   line-height: 1.5;
-  color: #555;
+  overflow-wrap: anywhere;
+}
+.errors li + li {
+  margin-top: var(--space-2);
+}
+.errors button {
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  padding: var(--space-1);
+}
+.errors button:hover {
+  color: var(--foreground);
+}
+.errors svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  fill: none;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.file-status.processing svg {
+  animation: spin 900ms linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .file-status.processing svg {
+    animation: none;
+  }
 }

@@ -18,22 +18,25 @@
     "rust:format": "cargo fmt --manifest-path src-tauri/Cargo.toml",
     "rust:format:check": "cargo fmt --manifest-path src-tauri/Cargo.toml -- --check",
     "build:desktop": "tauri build",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "test": "node --experimental-strip-types --test src/*.test.ts",
+    "rust:test": "cargo test --locked --manifest-path src-tauri/Cargo.toml"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "^2.8.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.4",
+    "@tauri-apps/cli": "^2",
+    "@types/node": "^24",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^6.0.2",
     "typescript": "^7.0.2",
-    "vite": "^8.3.5",
-    "@tauri-apps/cli": "^2",
-    "@types/node": "^24",
-    "@biomejs/biome": "2.6.4"
+    "vite": "^8.3.5"
   },
   "license": "MIT",
   "engines": {

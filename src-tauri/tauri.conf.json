@@ -14,10 +14,10 @@
       {
         "label": "main",
         "title": "Zapbeam",
-        "width": 800,
-        "height": 560,
+        "width": 600,
+        "height": 400,
         "minWidth": 360,
-        "minHeight": 280
+        "minHeight": 240
       }
     ],
     "security": {
