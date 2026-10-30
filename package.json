@@ -1,0 +1,42 @@
+{
+  "name": "zapbeam",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tauri dev",
+    "dev:frontend": "vite",
+    "build": "npm run typecheck && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit && tsc --project tsconfig.node.json --noEmit",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "check": "npm run lint && npm run format:check && npm run typecheck",
+    "rust:check": "cargo check --locked --manifest-path src-tauri/Cargo.toml",
+    "rust:lint": "cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
+    "rust:format": "cargo fmt --manifest-path src-tauri/Cargo.toml",
+    "rust:format:check": "cargo fmt --manifest-path src-tauri/Cargo.toml -- --check",
+    "build:desktop": "tauri build",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^6.0.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "@tauri-apps/cli": "^2",
+    "@types/node": "^24",
+    "@biomejs/biome": "2.6.4"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}
