@@ -5,7 +5,7 @@ export type FileState =
   | "unchanged"
   | "error";
 const labels: Record<FileState, string> = {
-  unprocessed: "Not optimized — optimization is not available yet",
+  unprocessed: "Queued for optimization",
   processing: "Processing",
   compressed: "Compressed",
   unchanged: "Unchanged — no smaller valid image produced",

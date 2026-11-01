@@ -10,3 +10,10 @@ src-tauri/gen/
 !.env.example
 .idea/
 .vscode/
+
+src-tauri/binaries/jpegtran-*
+
+# Local Python tooling
+__pycache__/
+*.py[cod]
+.venv/

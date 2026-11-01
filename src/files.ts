@@ -1,4 +1,20 @@
+export type ResultCategory =
+  | "compressed"
+  | "noSavings"
+  | "unsupported"
+  | "filesystem"
+  | "engine"
+  | "inputValidation"
+  | "outputValidation"
+  | "sourceChanged"
+  | "cancelled";
+
 export interface ImageFile {
+  id?: string;
+  state?: import("./FileStatus").FileState;
+  savings?: number;
+  category?: ResultCategory;
+  error?: string;
   path: string;
   name: string;
   format: "JPEG" | "PNG";

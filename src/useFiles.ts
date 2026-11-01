@@ -35,9 +35,34 @@ export function useFiles() {
         }
         if (!mounted.current) return;
         const result = mergeFiles(queue.current, results);
+        const added = result.files.filter(
+          (file) => !queue.current.some((old) => old.path === file.path),
+        );
+        for (const file of added) file.id = crypto.randomUUID();
         queue.current = result.files;
         setFiles(result.files);
         setIssues(result.issues);
+        for (let offset = 0; offset < added.length; offset += 256) {
+          const batch = added
+            .slice(offset, offset + 256)
+            .filter((file) =>
+              queue.current.some((current) => current.id === file.id),
+            );
+          try {
+            await invoke("schedule_optimization", {
+              requests: batch.map(({ id, path }) => ({ id, path })),
+            });
+          } catch (error) {
+            for (const file of batch) {
+              file.state = "error";
+              file.error =
+                typeof error === "string"
+                  ? error
+                  : "Could not schedule optimization";
+            }
+            setFiles([...queue.current]);
+          }
+        }
         const duplicates = result.duplicates + paths.length - unique.length;
         setMessage(
           `${result.added} ${result.added === 1 ? "image" : "images"} added.${duplicates ? ` ${duplicates} already in the list.` : ""}${result.issues.length ? ` ${result.issues.length} could not be added.` : ""}`,
@@ -104,6 +129,53 @@ export function useFiles() {
             );
         });
     }
+    let polling = false;
+    const timer = window.setInterval(async () => {
+      if (
+        !isTauri() ||
+        polling ||
+        !queue.current.some(
+          (file) => !file.state || file.state === "processing",
+        )
+      )
+        return;
+      polling = true;
+      try {
+        const updates = await invoke<
+          {
+            id: string;
+            state: ImageFile["state"];
+            size: number | null;
+            savings: number | null;
+            error: string | null;
+            category: ImageFile["category"] | null;
+          }[]
+        >("optimization_results");
+        if (!active) return;
+        const byId = new Map(updates.map((update) => [update.id, update]));
+        queue.current = queue.current.map((file) => {
+          const update = file.id ? byId.get(file.id) : undefined;
+          return update
+            ? {
+                ...file,
+                state: update.state,
+                category: update.category ?? undefined,
+                size: update.size ?? file.size,
+                savings: update.savings ?? undefined,
+                error: update.error ?? undefined,
+              }
+            : file;
+        });
+        setFiles(queue.current);
+      } catch {
+        if (active)
+          setNativeError(
+            "Could not retrieve optimization results. Restart the app.",
+          );
+      } finally {
+        polling = false;
+      }
+    }, 150);
     const keydown = (event: KeyboardEvent) => {
       if (
         (event.metaKey || event.ctrlKey) &&
@@ -116,6 +188,7 @@ export function useFiles() {
     };
     window.addEventListener("keydown", keydown);
     return () => {
+      window.clearInterval(timer);
       active = false;
       mounted.current = false;
       unlisten?.();
@@ -124,6 +197,22 @@ export function useFiles() {
   }, [chooseFiles, ingest]);
 
   function remove(paths: Set<string>) {
+    const ids = queue.current
+      .filter((file) => paths.has(file.path))
+      .map((file) => file.id)
+      .filter(Boolean);
+    const cancellation = (async () => {
+      try {
+        await invoke("cancel_optimization", { ids });
+      } catch {
+        setNativeError(
+          "Could not cancel processing. A file may still finish optimization.",
+        );
+      }
+    })();
+    pending.current = Promise.all([pending.current, cancellation]).then(
+      () => {},
+    );
     queue.current = queue.current.filter((file) => !paths.has(file.path));
     setFiles(queue.current);
     setMessage(`${paths.size} entries removed from the list.`);

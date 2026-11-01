@@ -1,3 +1,4 @@
+use crate::diagnostics::{Category, Result as DiagnosticResult, Trace};
 use serde::Serialize;
 use std::{fs::File, io::Read, path::Path};
 
@@ -14,7 +15,7 @@ pub struct ImageFile {
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum Inspection {
     Image { file: ImageFile },
-    Rejected { name: String, message: &'static str },
+    Rejected { name: String, message: String },
 }
 
 fn detect_format(bytes: &[u8]) -> Option<&'static str> {
@@ -27,33 +28,36 @@ fn detect_format(bytes: &[u8]) -> Option<&'static str> {
     }
 }
 
-fn inspect(path: &Path) -> Result<ImageFile, &'static str> {
+fn inspect(path: &Path) -> DiagnosticResult<ImageFile> {
+    let mut trace = Trace::new();
+    let result = inspect_inner(path, &mut trace);
+    trace.finish(result, Category::Inspected)
+}
+fn inspect_inner(path: &Path, trace: &mut Trace) -> DiagnosticResult<ImageFile> {
+    trace.stage("ingestion_stat", Category::Filesystem);
     if !path.is_absolute() {
-        return Err("Choose a file using Add Files or drag it into the window.");
+        return Err("Choose a file using Add Files or drag it into the window.".into());
     }
-    let canonical = path
-        .canonicalize()
-        .map_err(|_| "File is unavailable. It may have moved or access was denied.")?;
-    let metadata = canonical
-        .metadata()
-        .map_err(|_| "Could not read file information.")?;
+    if std::fs::symlink_metadata(path)?.file_type().is_symlink() {
+        return Err("Add the original file instead of a symbolic link.".into());
+    }
+    trace.stage("ingestion_canonicalize", Category::Filesystem);
+    let canonical = path.canonicalize()?;
+    let metadata = canonical.metadata()?;
     if !metadata.is_file() {
-        return Err("Not a regular file. Add individual JPEG or PNG images.");
+        return Err("Not a regular file. Add individual JPEG or PNG images.".into());
     }
-    let mut source =
-        File::open(&canonical).map_err(|_| "Could not open file. Check its read permissions.")?;
-    let metadata = source
-        .metadata()
-        .map_err(|_| "Could not read file information.")?;
+    trace.stage("ingestion_open", Category::Filesystem);
+    let mut source = File::open(&canonical)?;
+    let metadata = source.metadata()?;
+    trace.source_size = Some(metadata.len());
+    trace.stage("ingestion_signature", Category::InputValidation);
     let mut signature = [0; 8];
     // Read only a signature, never decode or load the full image.
-    let count = source
-        .by_ref()
-        .take(8)
-        .read(&mut signature)
-        .map_err(|_| "Could not read the image header.")?;
+    let count = source.by_ref().take(8).read(&mut signature)?;
     let format = detect_format(&signature[..count])
         .ok_or("Not a supported image. Only JPEG and PNG are supported.")?;
+    trace.format = Some(format);
     let canonical = canonical
         .to_str()
         .ok_or("This file path cannot be represented. Try renaming the file.")?;
@@ -87,7 +91,7 @@ pub async fn inspect_files(paths: Vec<String>) -> Result<Vec<Inspection>, &'stat
                             .unwrap_or_default()
                             .to_string_lossy()
                             .into_owned(),
-                        message,
+                        message: message.to_string(),
                     },
                 }
             })

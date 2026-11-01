@@ -137,13 +137,20 @@ function App() {
                   }
                 >
                   <td>
-                    <FileStatus state="unprocessed" />
+                    <FileStatus
+                      state={file.state ?? "unprocessed"}
+                      label={file.error}
+                    />
                   </td>
                   <td className="filename" title={file.name}>
                     {file.name}
                   </td>
                   <td className="numeric">{formatSize(file.size)}</td>
-                  <td className="numeric savings" />
+                  <td className="numeric savings">
+                    {file.state === "compressed" && file.savings !== undefined
+                      ? `${file.savings.toFixed(1)}%`
+                      : ""}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -171,7 +178,7 @@ function App() {
       <p id="table-help" className="sr-only">
         Use arrow keys to select images, Shift to select a range, Command or
         Control to toggle selections, and Delete to remove entries from the
-        list. Optimization is not available yet.
+        list. Images are optimized automatically.
       </p>
       <div className="sr-only" role="status">
         {message}
