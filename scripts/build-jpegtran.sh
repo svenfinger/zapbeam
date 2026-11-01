@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 # Native builds only; invoke separately on each distribution target.
-root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+root=$(CDPATH='' cd -- "$(dirname "$0")/.." && pwd)
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 curl -fL https://github.com/mozilla/mozjpeg/archive/refs/tags/v4.1.5.tar.gz -o "$work/source.tar.gz"

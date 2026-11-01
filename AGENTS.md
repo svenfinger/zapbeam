@@ -7,7 +7,9 @@ Zapbeam is a local-first desktop media optimizer for macOS and Linux. JPEG/PNG f
 - `src/`: React presentation, interaction state, and explicit Tauri invocations.
 - `src-tauri/src/`: Rust commands and desktop startup. Read-only file inspection lives in `files.rs`; the bounded worker, codecs, validation, and replacement live in `optimizer.rs`.
 - `src-tauri/tauri.conf.json` and `capabilities/`: window, bundle, CSP, and security configuration.
-- `.github/workflows/validate.yml`: Ubuntu static validation.
+- `.github/workflows/validate.yml`: Ubuntu validation and manual macOS/Linux installer builds.
+- `RELEASE.md`: build commands, artifact locations and distribution prerequisites. Keep release builds credential-free until signing and publishing are explicitly requested.
+- `rust-toolchain.toml` pins Rust; keep version fields in npm, Cargo and Tauri aligned and run `scripts/verify-version.py` when changing them.
 - Keep command contracts narrow and explicit. Validate untrusted inputs in Rust; TypeScript types are not a security boundary.
 
 ## Engineering expectations

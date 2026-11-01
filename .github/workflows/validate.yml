@@ -1,32 +1,86 @@
-name: Validate
+name: Validate and build
 on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: validate-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  static:
-    runs-on: ubuntu-24.04
+  validate:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(github.event_name == 'workflow_dispatch' && '["ubuntu-22.04", "macos-15"]' || '["ubuntu-22.04"]') }}
+    runs-on: ${{ matrix.os }}
+    env:
+      # Keep the sidecar and Tauri deployment target aligned.
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: npm
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Install pinned Rust toolchain
+        run: rustup show active-toolchain
+      - uses: Swatinem/rust-cache@v2
         with:
-          components: rustfmt, clippy
-      - name: Install Tauri system dependencies
+          workspaces: src-tauri
+          key: ${{ matrix.os }}
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+          sudo apt-get install -y cmake libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf libfuse2
+      - name: Check native architecture and record toolchains
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            test "$(uname -m)" = arm64
+          else
+            test "$(uname -m)" = x86_64
+          fi
+          rustc -vV
+          node --version
+          cc --version
+          cmake --version
       - run: scripts/build-jpegtran.sh
       - run: npm ci
+      - run: python3 scripts/verify-version.py
       - run: npm run check
       - run: npm test
-      - run: npm run rust:test
-      - run: npm run build
       - run: npm run rust:format:check
       - run: npm run rust:check
       - run: npm run rust:lint
+      - run: npm run rust:test
+      # Tauri's beforeBuildCommand builds the frontend during packaging.
+      - run: npm run build
+        if: github.event_name != 'workflow_dispatch'
+      - name: Build installers
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+        run: |
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            npm run build:desktop -- --bundles dmg -- --locked
+          else
+            npm run build:desktop -- --bundles appimage,deb -- --locked
+          fi
+      - name: Inspect installers
+        if: github.event_name == 'workflow_dispatch'
+        run: python3 scripts/verify-packages.py
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: Zapbeam-0.1.0-${{ matrix.os }}-${{ runner.arch }}
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            src-tauri/target/release/bundle/dmg/*.dmg
+            src-tauri/target/release/bundle/appimage/*.AppImage
+            src-tauri/target/release/bundle/deb/*.deb

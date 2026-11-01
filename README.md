@@ -10,7 +10,7 @@ Smaller replacements preserve orientation, color information and transparency wh
 
 ## Contributing
 
-See the [contribution guide](CONTRIBUTING.md) for setup, development, validation, and build instructions. Changes are recorded in the [changelog](CHANGELOG.md).
+See the [contribution guide](CONTRIBUTING.md) for setup, development, validation, and build instructions. Changes are recorded in the [changelog](CHANGELOG.md). See the [release build guide](RELEASE.md) for packaging commands and supported targets.
 
 ## License
 

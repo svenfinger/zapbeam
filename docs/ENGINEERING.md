@@ -24,7 +24,7 @@ This is not a universal crash-durability guarantee. There remains a narrow exter
 
 Run `scripts/build-jpegtran.sh` with Rust, curl, shasum, CMake and a C compiler installed. The script verifies the v4.1.5 source archive SHA-256, uses a fixed build string and builds `jpegtran-static` with shared libraries, TurboJPEG, PNG input and SIMD disabled. This configuration avoids additional assembly toolchains. Compiler/SDK versions can still affect binary bytes: source/configuration are reproducible, not a claim of bit-identical builds across toolchains.
 
-The script writes `src-tauri/binaries/jpegtran-<host-triple>`. Tauri `externalBin` bundles it alongside the application executable as `jpegtran`; Rust resolves only that sibling. No PATH fallback or user-installed codec is used. Build natively on each target. Linux builds must use a distribution appropriate for the desired glibc baseline. Ubuntu CI builds the sidecar before Rust checks. Linux execution, distribution packaging, signing and notarization require separate verification.
+The script writes `src-tauri/binaries/jpegtran-<host-triple>`. Tauri `externalBin` bundles it alongside the application executable as `jpegtran`; Rust resolves only that sibling. No PATH fallback or user-installed codec is used. Build natively on each target. Linux builds must use a distribution appropriate for the desired glibc baseline. Ubuntu CI builds the sidecar before Rust checks. The manual workflow builds and inspects installers; see `RELEASE.md`. Linux GUI execution, installation, signing and notarization require separate verification.
 
 ## Licensing
 

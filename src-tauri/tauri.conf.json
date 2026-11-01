@@ -36,6 +36,13 @@
       "icons/icon.ico"
     ],
     "externalBin": ["binaries/jpegtran"],
-    "resources": ["../docs/licenses/*"]
+    "resources": ["../docs/licenses/*"],
+    "category": "GraphicsAndDesign",
+    "shortDescription": "Lossless JPEG and PNG optimization",
+    "longDescription": "Optimize JPEG and PNG images locally with a compact desktop interface.",
+    "publisher": "Sven Finger",
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    }
   }
 }
