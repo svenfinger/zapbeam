@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ${{ fromJSON(github.event_name == 'workflow_dispatch' && '["ubuntu-22.04", "macos-15"]' || '["ubuntu-22.04"]') }}
+        os: [ubuntu-22.04]
     runs-on: ${{ matrix.os }}
     env:
       # Keep the sidecar and Tauri deployment target aligned.
@@ -84,3 +84,54 @@ jobs:
             src-tauri/target/release/bundle/dmg/*.dmg
             src-tauri/target/release/bundle/appimage/*.AppImage
             src-tauri/target/release/bundle/deb/*.deb
+
+  macos-sign:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: macos-15
+    environment: release
+    env:
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install pinned Rust toolchain
+        run: rustup show active-toolchain
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: macos-15
+      - name: Check native architecture and record toolchains
+        run: |
+          test "$(uname -m)" = arm64
+          rustc -vV
+          node --version
+          cc --version
+          cmake --version
+      - run: scripts/build-jpegtran.sh
+      - run: npm ci
+      - run: python3 scripts/verify-version.py
+      - run: npm run check
+      - run: npm test
+      - run: npm run rust:format:check
+      - run: npm run rust:check
+      - run: npm run rust:lint
+      - run: npm run rust:test
+      - run: python3 -m unittest discover -s scripts -p test_package_signing.py
+      - name: Sign, notarize and inspect macOS installer
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_PRIVATE_KEY: ${{ secrets.APPLE_API_PRIVATE_KEY }}
+        run: scripts/build-signed-macos.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Zapbeam-0.1.0-macos-15-${{ runner.arch }}
+          if-no-files-found: error
+          retention-days: 14
+          path: src-tauri/target/release/bundle/dmg/*.dmg

@@ -42,7 +42,8 @@
     "longDescription": "Optimize JPEG and PNG images locally with a compact desktop interface.",
     "publisher": "Sven Finger",
     "macOS": {
-      "minimumSystemVersion": "11.0"
+      "minimumSystemVersion": "11.0",
+      "hardenedRuntime": true
     }
   }
 }
